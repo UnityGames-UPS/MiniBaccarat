@@ -12,26 +12,34 @@ public class CardScript : MonoBehaviour
     private LayoutElement Card_LE;
     [SerializeField]
     private Transform Card_transform;
-    [SerializeField]
-    private BJController bjManager;
+    [SerializeField] private GameManager gameManager;
 
     private Sprite csprite = null;
 
     private void Start()
     {
-        bjManager = GameObject.FindWithTag("GameController").GetComponent<BJController>();
+        gameManager = GameObject.FindWithTag("GameController").GetComponent<GameManager>();
     }
 
-    internal void OnFlipMethod(Sprite cardSprite, int value)
+    public void OnFlipMethod(Sprite cardSprite, int value)
     {
         csprite = cardSprite;
         Card_transform.localEulerAngles = new Vector3(0, 180, 0);
-        Card_transform.DORotate(new Vector3(0, 0, 0), 1, RotateMode.FastBeyond360).OnComplete(delegate
+
+        Sequence flipSeq = DOTween.Sequence();
+
+        flipSeq.Append(
+            Card_transform.DORotate(Vector3.zero, 0.45f)
+                .SetEase(Ease.OutCubic)
+        );
+
+        flipSeq.OnComplete(() =>
         {
             Card_LE.ignoreLayout = false;
-            bjManager.AfterCardFlip(value);
+            gameManager.AfterCardFlip(value);
         });
-        DOVirtual.DelayedCall(0.3f, changeSprite);
+
+        DOVirtual.DelayedCall(0.22f, changeSprite);
     }
 
     private void changeSprite()
