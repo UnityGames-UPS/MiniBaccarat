@@ -23,9 +23,9 @@ public class BetManager : MonoBehaviour
     [SerializeField] private RectTransform winningChipArea;
 
     [Header("Limits")]
-    [SerializeField] private int maxPlayerBet = 1000;
-    [SerializeField] private int maxBankerBet = 1000;
-    [SerializeField] private int maxTieBet = 100;
+    [SerializeField] internal int maxPlayerBet = 1000;
+    [SerializeField] internal int maxBankerBet = 1000;
+    [SerializeField] internal int maxTieBet = 100;
 
     [Header("Chip Values")]
     [SerializeField] private int[] chipValues = { 1, 5, 25, 100, 500, 1000 };
@@ -69,6 +69,7 @@ public class BetManager : MonoBehaviour
         }
     }
 
+
     #region Betting Logic
 
     internal void PlaceBet(int betType) // 0 = Player, 1 = Banker, 2 = Tie
@@ -83,6 +84,19 @@ public class BetManager : MonoBehaviour
         if (currentTotalBet + chipValue > uiManager.currentBalance)
         {
             uiManager.LowBalPopup();
+            return;
+        }
+
+        if (betType == 0 && chipValue > maxPlayerBet)
+        {
+            return;
+        }
+        if (betType == 1 && chipValue > maxBankerBet)
+        {
+            return;
+        }
+        if (betType == 2 && chipValue > maxTieBet)
+        {
             return;
         }
 
@@ -540,24 +554,36 @@ public class BetManager : MonoBehaviour
     {
         int player = socketManager.resultData.payload.playerHand.value;
         int banker = socketManager.resultData.payload.dealerHand.value;
-        int winAmount = (int)socketManager.resultData.payload.winAmount;
+        // int winAmount = (int)socketManager.resultData.payload.winAmount;
+        int winAmount = Mathf.RoundToInt((float)socketManager.resultData.payload.winAmount);
         uiManager.UpdateBalanceText(socketManager.resultData.player.balance);
 
         if (player > banker)
         {
             Debug.Log("Player wins");
+            audioController.PlayPlayerWins();
             int profit = winAmount - GetPlayerBet();
+            // if (profit == 0)
+            // {
+            //     profit = 1;
+            // }
             yield return PlayerWin(profit);
         }
         else if (banker > player)
         {
             Debug.Log("Banker wins");
+            audioController.PlayBankerWins();
             int profit = winAmount - GetBankerBet();
+            // if (profit == 0)
+            // {
+            //     profit = 1;
+            // }
             yield return BankerWin(profit);
         }
         else
         {
             Debug.Log("Tie");
+            audioController.PlayGameTie();
             int profit = winAmount - (GetTieBet() + GetBankerBet() + GetPlayerBet());
             yield return TieWin(profit);
         }
@@ -574,7 +600,7 @@ public class BetManager : MonoBehaviour
             tieBets.Clear();
             yield break;
         }
-        audioController.PlayPlayerWins();
+        // audioController.PlayPlayerWins();
         yield return new WaitForSeconds(1f);
 
         yield return SpawnProfitChips(profit, playerBetArea, playerChips, playerBets);
@@ -621,7 +647,7 @@ public class BetManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        audioController.PlayBankerWins();
+        // audioController.PlayBankerWins();
         yield return new WaitForSeconds(1f);
 
 
@@ -632,7 +658,7 @@ public class BetManager : MonoBehaviour
 
     private IEnumerator TieWin(int profit)
     {
-        
+
         if (profit <= 0)
         {
             DestroyChipList(playerChips);
@@ -642,7 +668,7 @@ public class BetManager : MonoBehaviour
             yield break;
         }
 
-        audioController.PlayGameTie();
+        // audioController.PlayGameTie();
         yield return new WaitForSeconds(1f);
 
         yield return SpawnProfitChips(profit, tieBetArea, tieChips, tieBets);

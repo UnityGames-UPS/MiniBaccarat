@@ -162,9 +162,14 @@ public class UIManager : MonoBehaviour
     {
         currentBalance = socketManager.playerdata.balance;
         BalanceText.text = socketManager.playerdata.balance.ToString("N2");
+        WinAmountText.text = "0.00";
+        BetAmountText.text = "0.00";
         playerMaximunText.text = socketManager.initialData.limits.playerBet.ToString();
         bankerMaximunText.text = socketManager.initialData.limits.bankerBet.ToString();
         tieMaximunText.text = socketManager.initialData.limits.tieBet.ToString();
+        betManager.maxBankerBet = socketManager.initialData.limits.bankerBet;
+        betManager.maxPlayerBet = socketManager.initialData.limits.playerBet;
+        betManager.maxTieBet = socketManager.initialData.limits.tieBet;
     }
 
     internal void UpdateBalanceText(double newBalance)
