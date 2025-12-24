@@ -253,6 +253,8 @@ public class GameManager : MonoBehaviour
             Destroy(card);
         activeCards.Clear();
 
+        betManager.ClearBetHistoryAfterRound();
+
         uiManager.ToggleReBetButtons(true);
         uiManager.SetCoinButtonsInteractable(true);
 

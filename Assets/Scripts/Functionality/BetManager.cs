@@ -158,21 +158,21 @@ public class BetManager : MonoBehaviour
             switch (entry.betType)
             {
                 case 0:
-                    if(entry.chipValue + GetPlayerBet() > maxPlayerBet)
+                    if (entry.chipValue + GetPlayerBet() > maxPlayerBet)
                     {
                         break;
                     }
                     AddBet(playerBets, playerChips, playerBetArea, entry.chipValue, maxPlayerBet, 0);
                     break;
                 case 1:
-                    if(entry.chipValue + GetBankerBet() > maxBankerBet)
+                    if (entry.chipValue + GetBankerBet() > maxBankerBet)
                     {
                         break;
                     }
                     AddBet(bankerBets, bankerChips, bankerBetArea, entry.chipValue, maxBankerBet, 1);
                     break;
                 case 2:
-                    if(entry.chipValue + GetTieBet() > maxTieBet)
+                    if (entry.chipValue + GetTieBet() > maxTieBet)
                     {
                         break;
                     }
@@ -621,8 +621,8 @@ public class BetManager : MonoBehaviour
     {
         if (profit <= 0)
         {
-            DestroyChipList(bankerChips,bankerBets);
-            DestroyChipList(tieChips,tieBets);
+            DestroyChipList(bankerChips, bankerBets);
+            DestroyChipList(tieChips, tieBets);
             bankerBets.Clear();
             tieBets.Clear();
             yield break;
@@ -644,8 +644,8 @@ public class BetManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        DestroyChipList(bankerChips,bankerBets);
-        DestroyChipList(tieChips,tieBets);
+        DestroyChipList(bankerChips, bankerBets);
+        DestroyChipList(tieChips, tieBets);
     }
 
     private IEnumerator BankerWin(int profit)
@@ -653,8 +653,8 @@ public class BetManager : MonoBehaviour
 
         if (profit <= 0)
         {
-            DestroyChipList(playerChips,playerBets);
-            DestroyChipList(tieChips,tieBets);
+            DestroyChipList(playerChips, playerBets);
+            DestroyChipList(tieChips, tieBets);
             playerBets.Clear();
             tieBets.Clear();
             yield break;
@@ -678,9 +678,9 @@ public class BetManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
 
-        DestroyChipList(playerChips,playerBets);
+        DestroyChipList(playerChips, playerBets);
         // DestroyChipList(bankerChips);
-        DestroyChipList(tieChips,tieBets);
+        DestroyChipList(tieChips, tieBets);
     }
 
     private IEnumerator TieWin(int profit)
@@ -688,8 +688,8 @@ public class BetManager : MonoBehaviour
 
         if (profit <= 0)
         {
-            DestroyChipList(playerChips,playerBets);
-            DestroyChipList(bankerChips,bankerBets);
+            DestroyChipList(playerChips, playerBets);
+            DestroyChipList(bankerChips, bankerBets);
             playerBets.Clear();
             bankerBets.Clear();
             yield break;
@@ -784,7 +784,7 @@ public class BetManager : MonoBehaviour
         collectingWinnings = false;
     }
 
-    private void DestroyChipList(List<GameObject> chips , List<int> betList)
+    private void DestroyChipList(List<GameObject> chips, List<int> betList)
     {
         if (chips.Count == 0) return;
 
@@ -815,8 +815,14 @@ public class BetManager : MonoBehaviour
     internal void DestroyWinningChips()
     {
         List<int> winningbets = new();
-        DestroyChipList(winningChips,winningbets);
+        DestroyChipList(winningChips, winningbets);
         uiManager.WinningAreaText.gameObject.SetActive(false);
+    }
+
+    internal void ClearBetHistoryAfterRound()
+    {
+        betHistory.Clear();
+        betsLocked = false;
     }
 
     #endregion
