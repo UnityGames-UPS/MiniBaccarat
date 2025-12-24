@@ -24,7 +24,9 @@ internal class AudioController : MonoBehaviour
 
     [Header("Sound Buttons")]
     [SerializeField] private Button SoundButton;
+    [SerializeField] private Button SoundMuteButton;
     [SerializeField] private Button MusicButton;
+    [SerializeField] private Button MusicMuteButton;
 
     private bool isGameMuted = false;
     private bool isMusicMuted = false;
@@ -43,17 +45,50 @@ internal class AudioController : MonoBehaviour
             MusicButton.onClick.AddListener(ToggleBackgroundMusic);
         }
 
+        if (SoundMuteButton)
+        {
+            SoundMuteButton.onClick.RemoveAllListeners();
+            SoundMuteButton.onClick.AddListener(ToggleGameSound);
+        }
+
+        if (MusicMuteButton)
+        {
+            MusicMuteButton.onClick.RemoveAllListeners();
+            MusicMuteButton.onClick.AddListener(ToggleBackgroundMusic);
+        }
+
         PlayBackground();
     }
 
     private void ToggleGameSound()
     {
+        Debug.Log("button pressed!");
+        if (!isGameMuted)
+        {
+            SoundMuteButton.gameObject.SetActive(true);
+            SoundButton.gameObject.SetActive(false);
+        }
+        else
+        {
+            SoundButton.gameObject.SetActive(true);
+            SoundMuteButton.gameObject.SetActive(false);
+        }
         isGameMuted = !isGameMuted;
         MuteGame(isGameMuted);
     }
 
     private void ToggleBackgroundMusic()
     {
+        if (!isMusicMuted)
+        {
+            MusicMuteButton.gameObject.SetActive(true);
+            MusicButton.gameObject.SetActive(false);
+        }
+        else
+        {
+            MusicButton.gameObject.SetActive(true);
+            MusicMuteButton.gameObject.SetActive(false);
+        }
         isMusicMuted = !isMusicMuted;
         MuteBackground(isMusicMuted);
     }

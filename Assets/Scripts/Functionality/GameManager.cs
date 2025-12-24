@@ -65,7 +65,7 @@ public class GameManager : MonoBehaviour
         if (UndoBetButton != null) UndoBetButton.onClick.AddListener(() => betManager.UndoLastBet());
         if (ClearBetsButton != null) ClearBetsButton.onClick.AddListener(() => betManager.ClearAllBets());
         if (RebeDealButton != null) RebeDealButton.onClick.AddListener(() => StartCoroutine(betManager.RebetAndDeal()));
-        if (RebetButton != null) RebetButton.onClick.AddListener(() => betManager.Rebet());
+        if (RebetButton != null) RebetButton.onClick.AddListener(() => betManager.Rebet(true));
     }
 
     private void Update()
@@ -79,6 +79,7 @@ public class GameManager : MonoBehaviour
 
         uiManager.ToggleInitialBetButtons(false);
         uiManager.SetCoinButtonsInteractable(false);
+        uiManager.ToggleReBetButtons(false);
         StartCoroutine(DealCards());
     }
 
@@ -305,7 +306,7 @@ public class GameManager : MonoBehaviour
 
             Sequence flipSeq = DOTween.Sequence();
 
-            flipSeq.Append(card.transform.DORotate(Vector3.zero, 0.45f).SetEase(Ease.OutCubic));
+            flipSeq.Append(card.transform.DOLocalRotate(Vector3.zero, 0.45f).SetEase(Ease.OutCubic));
 
             DOVirtual.DelayedCall(0.1f, () =>
             {
@@ -363,7 +364,7 @@ public class GameManager : MonoBehaviour
     private void placebets(int betType)
     {
         betManager.PlaceBet(betType);
-        uiManager.ToggleInitialBetButtons(true);
+        // uiManager.ToggleInitialBetButtons(true);
     }
 
     #endregion

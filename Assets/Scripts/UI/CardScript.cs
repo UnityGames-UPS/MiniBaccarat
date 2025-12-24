@@ -28,10 +28,7 @@ public class CardScript : MonoBehaviour
 
         Sequence flipSeq = DOTween.Sequence();
 
-        flipSeq.Append(
-            Card_transform.DORotate(Vector3.zero, 0.45f)
-                .SetEase(Ease.OutCubic)
-        );
+        flipSeq.Append(Card_transform.DOLocalRotate(Vector3.zero, 0.45f).SetEase(Ease.OutCubic));
 
         flipSeq.OnComplete(() =>
         {
