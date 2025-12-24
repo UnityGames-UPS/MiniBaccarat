@@ -80,6 +80,7 @@ public class GameManager : MonoBehaviour
         uiManager.ToggleInitialBetButtons(false);
         uiManager.SetCoinButtonsInteractable(false);
         uiManager.ToggleReBetButtons(false);
+        uiManager.UpdateWinAmountText(0);
         StartCoroutine(DealCards());
     }
 
@@ -89,7 +90,7 @@ public class GameManager : MonoBehaviour
         socketManager.AccumulateResult(betManager.GetPlayerBet(), betManager.GetBankerBet(), betManager.GetTieBet());
 
         yield return new WaitUntil(() => socketManager.isResultdone);
-        uiManager.UpdateBalanceText(socketManager.resultData.player.balance);
+        uiManager.UpdateBalanceText(uiManager.currentBalance - (betManager.GetBankerBet() + betManager.GetPlayerBet() + betManager.GetTieBet()));
 
         var payload = socketManager.resultData.payload;
 
@@ -107,7 +108,7 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         StartCoroutine(betManager.PlayWinningAnimation());
-        yield return new WaitForSeconds(5f);
+        yield return new WaitForSeconds(3f);
 
         yield return StartCoroutine(CardCollectionAnim());
     }

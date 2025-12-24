@@ -31,25 +31,26 @@ public class BetManager : MonoBehaviour
     [SerializeField] private int[] chipValues = { 1, 5, 25, 100, 500, 1000 };
 
     private bool betsLocked = false;
-    
+    private bool rebetDone = false;
+
     // Current round bets
     private List<int> playerBets = new();
     private List<int> bankerBets = new();
     private List<int> tieBets = new();
-    
+
     // Chip GameObjects
     private List<GameObject> playerChips = new();
     private List<GameObject> bankerChips = new();
     private List<GameObject> tieChips = new();
-    
+
     // Bet history tracking
     private List<BetHistoryEntry> betHistory = new();
-    
+
     // Snapshot of last round bets
     private List<int> lastPlayerBets = new();
     private List<int> lastBankerBets = new();
     private List<int> lastTieBets = new();
-    
+
     // Winning chips
     private List<GameObject> winningChips = new();
     private bool isSpawningWinnings = false;
@@ -60,7 +61,7 @@ public class BetManager : MonoBehaviour
     {
         public int betType; // 0 = Player, 1 = Banker, 2 = Tie
         public int chipValue;
-        
+
         public BetHistoryEntry(int type, int value)
         {
             betType = type;
@@ -69,7 +70,7 @@ public class BetManager : MonoBehaviour
     }
 
     #region Betting Logic
-    
+
     internal void PlaceBet(int betType) // 0 = Player, 1 = Banker, 2 = Tie
     {
         if (betsLocked) return;
@@ -102,7 +103,7 @@ public class BetManager : MonoBehaviour
                 AddBet(tieBets, tieChips, tieBetArea, chipValue, maxTieBet, 2);
                 break;
         }
-        
+
         UpdateTotalBetDisplay();
     }
 
@@ -111,7 +112,7 @@ public class BetManager : MonoBehaviour
         if (betsLocked) return;
 
         int currentTotal = GetTotalCurrentBet();
-        
+
         // Check if we can afford to double
         if (currentTotal * 2 > uiManager.currentBalance)
         {
@@ -123,11 +124,11 @@ public class BetManager : MonoBehaviour
 
         // Make a copy of current history to double
         var historyCopy = new List<BetHistoryEntry>(betHistory);
-        
+
         foreach (var entry in historyCopy)
         {
             betHistory.Add(new BetHistoryEntry(entry.betType, entry.chipValue));
-            
+
             switch (entry.betType)
             {
                 case 0:
@@ -141,7 +142,7 @@ public class BetManager : MonoBehaviour
                     break;
             }
         }
-        
+
         UpdateTotalBetDisplay();
     }
 
@@ -186,15 +187,15 @@ public class BetManager : MonoBehaviour
     internal void ClearAllBets()
     {
         audioController.PlayUIButton();
-        
+
         ClearArea(playerBets, playerChips);
         ClearArea(bankerBets, bankerChips);
         ClearArea(tieBets, tieChips);
-        
+
         betHistory.Clear();
         betsLocked = false;
         UpdateTotalBetDisplay();
-        
+
         uiManager.ToggleInitialBetButtons(false);
         if (uiManager.betPlacedOnce)
         {
@@ -216,6 +217,7 @@ public class BetManager : MonoBehaviour
             return;
         }
 
+
         // Rebuild history from last bets
         foreach (int value in lastPlayerBets)
         {
@@ -233,6 +235,8 @@ public class BetManager : MonoBehaviour
             AddBet(tieBets, tieChips, tieBetArea, value, maxTieBet, 2);
         }
 
+        rebetDone = true;
+
         UpdateTotalBetDisplay();
         if (isrebet)
         {
@@ -243,8 +247,12 @@ public class BetManager : MonoBehaviour
     internal IEnumerator RebetAndDeal()
     {
         audioController.PlayUIButton();
+        rebetDone = false;
         Rebet();
-        gameManager.OnDeal();
+        if (rebetDone)
+        {
+            gameManager.OnDeal();
+        }
         yield return new WaitForSeconds(0.4f);
     }
 
@@ -256,7 +264,7 @@ public class BetManager : MonoBehaviour
     internal int GetPlayerBet() => playerBets.Sum();
     internal int GetBankerBet() => bankerBets.Sum();
     internal int GetTieBet() => tieBets.Sum();
-    
+
     private int GetTotalCurrentBet() => GetPlayerBet() + GetBankerBet() + GetTieBet();
 
     #endregion
@@ -286,7 +294,7 @@ public class BetManager : MonoBehaviour
     private void OptimizeStack(List<int> betList, List<GameObject> chipList, RectTransform area, int betType)
     {
         bool optimizationHappened = false;
-        
+
         // Try to merge smaller chips into larger ones
         for (int i = 0; i < chipValues.Length - 1; i++)
         {
@@ -297,7 +305,7 @@ public class BetManager : MonoBehaviour
             if (betList.Count(v => v == small) >= needed)
             {
                 optimizationHappened = true;
-                
+
                 // Remove the small chips from bet list and chip list
                 for (int k = 0; k < needed; k++)
                 {
@@ -371,7 +379,7 @@ public class BetManager : MonoBehaviour
     {
         // Find the chip value in the bet list
         int index = betList.LastIndexOf(chipValue);
-        
+
         if (index == -1)
         {
             // The chip was optimized into a larger chip, we need to break it down
@@ -398,7 +406,7 @@ public class BetManager : MonoBehaviour
         {
             int largeValue = chipValues[i];
             if (largeValue <= targetValue) continue;
-            
+
             int largeIndex = betList.LastIndexOf(largeValue);
             if (largeIndex == -1) continue;
 
@@ -427,7 +435,7 @@ public class BetManager : MonoBehaviour
                 {
                     RebuildChipsVisually(betList, chipList, area);
                 }
-                
+
                 return;
             }
         }
@@ -533,6 +541,7 @@ public class BetManager : MonoBehaviour
         int player = socketManager.resultData.payload.playerHand.value;
         int banker = socketManager.resultData.payload.dealerHand.value;
         int winAmount = (int)socketManager.resultData.payload.winAmount;
+        uiManager.UpdateBalanceText(socketManager.resultData.player.balance);
 
         if (player > banker)
         {
@@ -543,74 +552,119 @@ public class BetManager : MonoBehaviour
         else if (banker > player)
         {
             Debug.Log("Banker wins");
-            yield return BankerWin();
+            int profit = winAmount - GetBankerBet();
+            yield return BankerWin(profit);
         }
         else
         {
             Debug.Log("Tie");
-            int profit = winAmount - GetTieBet();
+            int profit = winAmount - (GetTieBet() + GetBankerBet() + GetPlayerBet());
             yield return TieWin(profit);
         }
+        uiManager.UpdateBetAmountText(0);
     }
 
     private IEnumerator PlayerWin(int profit)
     {
+        if (profit <= 0)
+        {
+            DestroyChipList(bankerChips);
+            DestroyChipList(tieChips);
+            bankerBets.Clear();
+            tieBets.Clear();
+            yield break;
+        }
         audioController.PlayPlayerWins();
         yield return new WaitForSeconds(1f);
-        
+
         yield return SpawnProfitChips(profit, playerBetArea, playerChips, playerBets);
         yield return new WaitUntil(() => !isSpawningWinnings);
-        
+
         Debug.Log("Spawning done");
         yield return new WaitForSeconds(1.5f);
-        
-        yield return CollectChips(playerChips);
+
+        yield return CollectChips(playerChips, playerBets);
         yield return new WaitUntil(() => !collectingWinnings);
-        
+
         uiManager.UpdateWinningAreaText(socketManager.resultData.payload.winAmount.ToString());
         Debug.Log("Collecting done");
-        
+
         yield return new WaitForSeconds(1.5f);
-        
+
         DestroyChipList(bankerChips);
         DestroyChipList(tieChips);
     }
 
-    private IEnumerator BankerWin()
+    private IEnumerator BankerWin(int profit)
     {
+
+        if (profit <= 0)
+        {
+            DestroyChipList(playerChips);
+            DestroyChipList(tieChips);
+            playerBets.Clear();
+            tieBets.Clear();
+            yield break;
+        }
+
+        yield return SpawnProfitChips(profit, bankerBetArea, bankerChips, bankerBets);
+        yield return new WaitUntil(() => !isSpawningWinnings);
+
+        Debug.Log("Spawning done");
+        yield return new WaitForSeconds(1.5f);
+
+        yield return CollectChips(bankerChips, bankerBets);
+        yield return new WaitUntil(() => !collectingWinnings);
+
+        uiManager.UpdateWinningAreaText(socketManager.resultData.payload.winAmount.ToString());
+        Debug.Log("Collecting done");
+
+        yield return new WaitForSeconds(1.5f);
+
         audioController.PlayBankerWins();
-        yield return new WaitForSeconds(2f);
-        
+        yield return new WaitForSeconds(1f);
+
+
         DestroyChipList(playerChips);
-        DestroyChipList(bankerChips);
+        // DestroyChipList(bankerChips);
         DestroyChipList(tieChips);
     }
 
     private IEnumerator TieWin(int profit)
     {
+        
+        if (profit <= 0)
+        {
+            DestroyChipList(playerChips);
+            DestroyChipList(bankerChips);
+            playerBets.Clear();
+            bankerBets.Clear();
+            yield break;
+        }
+
         audioController.PlayGameTie();
         yield return new WaitForSeconds(1f);
-        
+
         yield return SpawnProfitChips(profit, tieBetArea, tieChips, tieBets);
         yield return new WaitUntil(() => !isSpawningWinnings);
-        
+
         Debug.Log("Spawning done");
         yield return new WaitForSeconds(1f);
-        
-        yield return CollectChips(tieChips);
+
+        yield return CollectChips(tieChips, tieBets);
         yield return new WaitUntil(() => !collectingWinnings);
-        
+
         Debug.Log("Collecting done");
         yield return new WaitForSeconds(1f);
-        
-        yield return CollectChips(bankerChips);
+
+        yield return CollectChips(bankerChips, bankerBets);
         yield return new WaitUntil(() => !collectingWinnings);
-        
+
         yield return new WaitForSeconds(1f);
-        
-        yield return CollectChips(playerChips);
+
+        yield return CollectChips(playerChips, playerBets);
         yield return new WaitUntil(() => !collectingWinnings);
-        
+
         uiManager.UpdateWinningAreaText(socketManager.resultData.payload.winAmount.ToString());
     }
 
@@ -647,7 +701,7 @@ public class BetManager : MonoBehaviour
         OptimizeStack(betList, chipList, area, betType);
     }
 
-    private IEnumerator CollectChips(List<GameObject> chips)
+    private IEnumerator CollectChips(List<GameObject> chips, List<int> betList)
     {
         collectingWinnings = true;
         Debug.Log("Chip Count: " + chips.Count);
@@ -668,11 +722,12 @@ public class BetManager : MonoBehaviour
             seq.Append(rt.DOScale(1f, 0.1f));
 
             winningChips.Add(chip);
-            
+
             yield return new WaitForSeconds(0.1f);
         }
 
         chips.Clear();
+        betList.Clear();
         collectingWinnings = false;
     }
 
@@ -690,7 +745,7 @@ public class BetManager : MonoBehaviour
     private List<int> BreakIntoChips(int amount)
     {
         List<int> result = new();
-        
+
         for (int i = chipValues.Length - 1; i >= 0; i--)
         {
             while (amount >= chipValues[i])
@@ -699,7 +754,7 @@ public class BetManager : MonoBehaviour
                 result.Add(chipValues[i]);
             }
         }
-        
+
         return result;
     }
 

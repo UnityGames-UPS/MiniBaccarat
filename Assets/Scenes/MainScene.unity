@@ -6131,8 +6131,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2022 If the Player stands the Banker draws a third card if the initial
     deal has a value of 0 - 5.\n\u2022 If the Player draws a third card then the
-    final value of the Player hand and Banker two card value\ndetermines whether
-    the Banker receives a third card."
+    final value of the Player hand and Banker two card value determines whether the
+    Banker receives a third card."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12128,7 +12128,7 @@ MonoBehaviour:
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 4
+  m_ScrollSensitivity: 20
   m_Viewport: {fileID: 197712699}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 1399250034}
