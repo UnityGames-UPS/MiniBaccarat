@@ -160,13 +160,29 @@ internal class AudioController : MonoBehaviour
     //     uiSource.PlayOneShot(navigation);
     // }
 
-    internal void MuteAll(bool mute)
+    private bool isForceMuted = false;
+
+    internal void SetMuteAll(bool forceMute)
     {
-        bgMusicSource.mute = mute;
-        gameSoundSource.mute = mute;
-        // uiSource.mute = mute;
+        if (forceMute == isForceMuted) return;
+        isForceMuted = forceMute;
+
+        if (forceMute)
+        {
+            bgMusicSource.mute = true;
+            gameSoundSource.mute = true;
+        }
+        else
+        {
+            bgMusicSource.mute = isMusicMuted;
+            gameSoundSource.mute = isGameMuted;
+        }
     }
 
+    private void OnApplicationFocus(bool focus)
+    {
+        SetMuteAll(!focus);
+    }
 
     internal void MuteBackground(bool mute) => bgMusicSource.mute = mute;
     internal void MuteGame(bool mute) => gameSoundSource.mute = mute;

@@ -303,7 +303,7 @@ public class BetManager : MonoBehaviour
     internal int GetBankerBet() => bankerBets.Sum();
     internal int GetTieBet() => tieBets.Sum();
 
-    private int GetTotalCurrentBet() => GetPlayerBet() + GetBankerBet() + GetTieBet();
+    internal int GetTotalCurrentBet() => GetPlayerBet() + GetBankerBet() + GetTieBet();
 
     #endregion
 

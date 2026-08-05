@@ -71,10 +71,25 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameManager gameManager;
     [SerializeField] private SocketIOManager socketManager;
     [SerializeField] private BetManager betManager;
-    // [SerializeField] private AudioController audioController;
+    [SerializeField] private AudioController audioController;
+    [SerializeField] internal JSFunctCalls jsFunctCalls;
     internal bool betPlacedOnce = false;
     private bool isExit = false;
     internal double currentBalance = 0;
+
+    private void Awake()
+    {
+        if (jsFunctCalls != null)
+            jsFunctCalls.RegisterVisibilityListener(gameObject.name);
+    }
+
+    public void OnFocusChanged(string value)
+    {
+        bool focused = value == "1";
+        Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
+        audioController?.SetMuteAll(!focused);
+        socketManager?.HandleFocusChange(focused);
+    }
 
     private void Start()
     {
@@ -176,6 +191,14 @@ public class UIManager : MonoBehaviour
     {
         currentBalance = newBalance;
         BalanceText.text = newBalance.ToString("N2");
+    }
+
+    internal void UpdateBalanceDisplay(double newBalance)
+    {
+        currentBalance = newBalance;
+        BalanceText.text = newBalance.ToString("N2");
+        if (betManager != null && betManager.GetTotalCurrentBet() > currentBalance)
+            LowBalPopup();
     }
 
     internal void UpdateBetAmountText(int newBetAmount)
