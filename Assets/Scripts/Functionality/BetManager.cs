@@ -763,17 +763,56 @@ public class BetManager : MonoBehaviour
 
     private List<int> BreakIntoChips(int amount)
     {
-        List<int> result = new();
+        if (amount <= 0) return new List<int>();
 
-        for (int i = chipValues.Length - 1; i >= 0; i--)
+        var denoms = chipValues.Distinct().OrderByDescending(v => v).ToArray();
+
+        // Fewest-chip EXACT decomposition via DP so we never silently drop value.
+        // A pure greedy largest-first pick can get stuck with this denomination set
+        // (e.g. 30 with {10,25,...} takes one 25 and is left with an
+        // unrepresentable remainder of 5, losing 5 of the actual bet).
+        int[] count = new int[amount + 1];
+        int[] usedDenom = new int[amount + 1];
+        for (int a = 1; a <= amount; a++)
         {
-            while (amount >= chipValues[i])
+            count[a] = int.MaxValue;
+            usedDenom[a] = -1;
+            foreach (int d in denoms)
             {
-                amount -= chipValues[i];
-                result.Add(chipValues[i]);
+                if (d > a || count[a - d] == int.MaxValue) continue;
+                if (count[a - d] + 1 < count[a])
+                {
+                    count[a] = count[a - d] + 1;
+                    usedDenom[a] = d;
+                }
             }
         }
 
+        List<int> result = new();
+        if (count[amount] != int.MaxValue)
+        {
+            int remaining = amount;
+            while (remaining > 0)
+            {
+                int d = usedDenom[remaining];
+                result.Add(d);
+                remaining -= d;
+            }
+            return result;
+        }
+
+        // No exact combination of chip denominations sums to this amount
+        // (can happen for arbitrary payout amounts) - fall back to a
+        // best-effort greedy breakdown, used only for cosmetic chip stacking.
+        int rem = amount;
+        for (int i = 0; i < denoms.Length; i++)
+        {
+            while (rem >= denoms[i])
+            {
+                rem -= denoms[i];
+                result.Add(denoms[i]);
+            }
+        }
         return result;
     }
 
