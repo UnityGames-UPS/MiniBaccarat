@@ -178,7 +178,6 @@ public class SocketIOManager : MonoBehaviour
     waitingForPong = false;
     missedPongs = 0;
     lastPongTime = Time.time;
-    SendPing();
   } //Back2 end  
 
   private void OnDisconnected() //Back2 Start
@@ -417,6 +416,7 @@ public class SocketIOManager : MonoBehaviour
     {
       case "initData":
         {
+          SendPing();
           initialData = myData.gameData;
 
           if (!SetInit)

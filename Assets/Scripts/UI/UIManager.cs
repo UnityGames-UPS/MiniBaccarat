@@ -185,6 +185,7 @@ public class UIManager : MonoBehaviour
         betManager.maxBankerBet = socketManager.initialData.limits.bankerBet;
         betManager.maxPlayerBet = socketManager.initialData.limits.playerBet;
         betManager.maxTieBet = socketManager.initialData.limits.tieBet;
+        betManager.ApplyChipDenominations(socketManager.initialData.bets);
     }
 
     internal void UpdateBalanceText(double newBalance)

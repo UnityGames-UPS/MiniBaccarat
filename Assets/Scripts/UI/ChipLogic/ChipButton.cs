@@ -17,4 +17,12 @@ public class ChipButton : MonoBehaviour
         else
             transform.localScale = Vector3.one;
     }
+
+    internal void SetValue(int newValue)
+    {
+        value = newValue;
+
+        var chipText = GetComponentInChildren<TextMeshProUGUI>();
+        if (chipText != null) chipText.text = newValue.ToString();
+    }
 }

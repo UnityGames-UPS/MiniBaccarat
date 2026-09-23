@@ -40,6 +40,22 @@ public class ChipSelector : MonoBehaviour
         return selectedChip != null ? selectedChip.value : 0;
     }
 
+    internal void ApplyChipValues(List<int> values)
+    {
+        if (values == null || values.Count == 0)
+        {
+            Debug.LogWarning("ApplyChipValues: no chip values provided, keeping inspector defaults.");
+            return;
+        }
+
+        if (values.Count != chips.Count)
+            Debug.LogWarning($"ApplyChipValues: expected {chips.Count} chip values, got {values.Count}.");
+
+        int count = Mathf.Min(values.Count, chips.Count);
+        for (int i = 0; i < count; i++)
+            chips[i].SetValue(values[i]);
+    }
+
 
     internal ChipButton GetChipByValue(float value)
     {

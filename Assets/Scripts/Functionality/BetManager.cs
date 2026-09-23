@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using System.Linq;
+using TMPro;
 
 public class BetManager : MonoBehaviour
 {
@@ -28,7 +29,7 @@ public class BetManager : MonoBehaviour
     [SerializeField] internal int maxTieBet = 100;
 
     [Header("Chip Values")]
-    [SerializeField] private int[] chipValues = { 1, 5, 25, 100, 500, 1000 };
+    [SerializeField] internal int[] chipValues = {};
 
     private bool betsLocked = false;
     private bool rebetDone = false;
@@ -305,6 +306,18 @@ public class BetManager : MonoBehaviour
 
     internal int GetTotalCurrentBet() => GetPlayerBet() + GetBankerBet() + GetTieBet();
 
+    internal void ApplyChipDenominations(List<int> bets)
+    {
+        if (bets == null || bets.Count == 0)
+        {
+            Debug.LogWarning("ApplyChipDenominations: backend bets list is null/empty, keeping inspector chipValues.");
+            return;
+        }
+
+        chipSelector.ApplyChipValues(bets);
+        chipValues = bets.OrderBy(v => v).ToArray();
+    }
+
     #endregion
 
     #region Helper Methods
@@ -322,80 +335,30 @@ public class BetManager : MonoBehaviour
         var chipPrefab = chipSelector.GetChipByValue(value).ChipPreab;
         GameObject chip = Instantiate(chipPrefab, chipRoot);
         chip.transform.localScale = Vector3.one;
+        var chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
+        if (chipText != null) chipText.text = value.ToString();
 
         AnimateChipToBetArea(chip, area, chipList.Count);
         chipList.Add(chip);
 
-        OptimizeStack(betList, chipList, area, betType);
+        OptimizeStack(betList, chipList, area);
     }
 
-    private void OptimizeStack(List<int> betList, List<GameObject> chipList, RectTransform area, int betType)
+    private void OptimizeStack(List<int> betList, List<GameObject> chipList, RectTransform area)
     {
-        bool optimizationHappened = false;
+        // Recompute the canonical largest-chips-first breakdown of the running total
+        // (same greedy decomposition used elsewhere, e.g. for winning chips) and only
+        // rebuild the visual stack when it actually differs from the current one -
+        // this correctly merges any combination that sums to a larger denomination
+        // (e.g. 5x100 -> one 500, or 2x100+1x50 -> one 250), not just same-value stacks.
+        int total = betList.Sum();
+        var optimal = BreakIntoChips(total);
 
-        // Try to merge smaller chips into larger ones
-        for (int i = 0; i < chipValues.Length - 1; i++)
-        {
-            int small = chipValues[i];
-            int large = chipValues[i + 1];
-            int needed = large / small;
+        if (betList.OrderBy(v => v).SequenceEqual(optimal.OrderBy(v => v))) return;
 
-            if (betList.Count(v => v == small) >= needed)
-            {
-                optimizationHappened = true;
-
-                // Remove the small chips from bet list and chip list
-                for (int k = 0; k < needed; k++)
-                {
-                    int idx = betList.LastIndexOf(small);
-                    if (idx >= 0 && idx < chipList.Count)
-                    {
-                        Destroy(chipList[idx]);
-                        chipList.RemoveAt(idx);
-                        betList.RemoveAt(idx);
-                    }
-                }
-
-                // Update history: remove the small chips and add the large one
-                UpdateHistoryAfterOptimization(betType, small, needed, large);
-
-                // Add the large chip
-                betList.Add(large);
-                var prefab = chipSelector.GetChipByValue(large).ChipPreab;
-                GameObject chip = Instantiate(prefab, area);
-                chip.transform.localScale = Vector3.zero;
-                chip.transform.localPosition = new Vector3(0, chipList.Count * 3f, 0);
-                chip.transform.DOScale(1f, 0.25f).SetEase(Ease.OutBack);
-                chipList.Add(chip);
-
-                // Recursively optimize in case we can merge further
-                OptimizeStack(betList, chipList, area, betType);
-                return;
-            }
-        }
-
-        // After optimization (or if no optimization happened), rearrange the stack
-        if (optimizationHappened)
-        {
-            RearrangeStack(betList, chipList);
-        }
-    }
-
-    private void UpdateHistoryAfterOptimization(int betType, int smallValue, int count, int largeValue)
-    {
-        // Find and remove 'count' instances of smallValue for this betType from history (from the end)
-        int removed = 0;
-        for (int i = betHistory.Count - 1; i >= 0 && removed < count; i--)
-        {
-            if (betHistory[i].betType == betType && betHistory[i].chipValue == smallValue)
-            {
-                betHistory.RemoveAt(i);
-                removed++;
-            }
-        }
-
-        // Add the new large chip to history
-        betHistory.Add(new BetHistoryEntry(betType, largeValue));
+        betList.Clear();
+        betList.AddRange(optimal);
+        RebuildChipsVisually(betList, chipList, area);
     }
 
     private void AnimateChipToBetArea(GameObject chip, RectTransform area, int stackIndex)
@@ -515,6 +478,8 @@ public class BetManager : MonoBehaviour
             GameObject chip = Instantiate(chipPrefab, area);
             chip.transform.localScale = Vector3.one;
             chip.transform.localPosition = new Vector3(0, chipList.Count * 3f, 0);
+            var chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
+            if (chipText != null) chipText.text = value.ToString();
             chipList.Add(chip);
         }
 
@@ -745,13 +710,13 @@ public class BetManager : MonoBehaviour
         var chipPrefab = chipSelector.GetChipByValue(value).ChipPreab;
         GameObject chip = Instantiate(chipPrefab, chipRoot);
         chip.transform.localScale = Vector3.one;
+        var chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
+        if (chipText != null) chipText.text = value.ToString();
 
         AnimateChipToBetArea(chip, area, chipList.Count);
         chipList.Add(chip);
 
-        // Get bet type for this area
-        int betType = area == playerBetArea ? 0 : area == bankerBetArea ? 1 : 2;
-        OptimizeStack(betList, chipList, area, betType);
+        OptimizeStack(betList, chipList, area);
     }
 
     private IEnumerator CollectChips(List<GameObject> chips, List<int> betList)
